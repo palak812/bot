@@ -1,0 +1,325 @@
+<<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mental Health Chatbot</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4e9ff;
+            transition: 0.3s;
+        }
+
+        .dark-mode {
+            background: #0f0f17;
+            color: white;
+        }
+
+        /* LOGIN PAGE */
+        #loginPage {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #6a0dad, #000);
+            animation: fadeIn 1s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .loginBox {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            width: 350px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px #b24bf3;
+            animation: floatUp 1s ease-out;
+        }
+
+        @keyframes floatUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 10px;
+            border: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 15px;
+            background: #b24bf3;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        /* CHAT CONTAINER */
+        #chatPage {
+            display: none;
+            padding: 20px;
+        }
+
+        .chat-container {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        }
+
+        .dark-mode .chat-container {
+            background: #1b1b2d;
+        }
+
+        .messages { height: 400px; overflow-y: auto; padding-bottom: 20px; }
+
+        .bot, .user {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 10px;
+            width: fit-content;
+            max-width: 80%;
+        }
+
+        .bot { background: #e0b3ff; }
+        .dark-mode .bot { background: #6d39a8; color:white; }
+
+        .user { background: #b24bf3; color: white; margin-left: auto; }
+
+        .input-area {
+            display: flex;
+            margin-top: 10px;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #aaa;
+        }
+
+        .mic-btn, .send-btn, .dark-btn {
+            margin-left: 10px;
+            padding: 10px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+        }
+
+        .typing { font-style: italic; opacity: 0.7; }
+
+        /* Helpline Panel */
+        #helpline {
+            position: fixed;
+            right: 20px;
+            top: 30px;
+            background: #6a0dad;
+            padding: 15px;
+            border-radius: 10px;
+            width: 220px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage">
+    <div class="loginBox">
+        <h2 style="color:white; text-align:center;">Mental Health Chatbot</h2>
+        <input id="username" placeholder="Enter your name" />
+        <button onclick="login()">Login</button>
+    </div>
+</div>
+
+<!-- HELPLINE PANEL -->
+<div id="helpline">
+    <h3>📞 Helplines</h3>
+    NIMHANS: <b>080 4611 0007</b><br>
+    AASRA: <b>91-9820466726</b>
+</div>
+
+<!-- CHAT PAGE -->
+<div id="chatPage">
+    <button class="dark-btn" onclick="toggleDarkMode()">🌙</button>
+
+    <div class="chat-container">
+        <h2>Mental Awareness Chatbot</h2>
+        <div class="messages" id="messages"></div>
+
+        <div class="typing" id="typing"></div>
+
+        <div class="input-area" style="flex-direction: column; gap: 10px;">
+            <textarea id="userInput" placeholder="Type your message..." rows="3"
+                style="width:100%; padding:10px; border-radius:10px; border:1px solid #aaa; resize:none;"></textarea>
+
+            <button class="send-btn" onclick="sendMessage()" 
+                style="width:100%; padding:12px; background:#b24bf3; border:none; border-radius:10px; color:white; font-size:16px; cursor:pointer;">
+                Send
+            </button>
+
+            <button class="mic-btn" onclick="startVoice()" 
+                style="width:100%; padding:12px; background:#ff74f7; border:none; border-radius:10px; color:white; font-size:16px; cursor:pointer;">
+                🎤 Speak
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function login() {
+    let name = document.getElementById("username").value;
+    if(name.trim()==="") return;
+
+    document.getElementById("loginPage").style.display = "none";
+    document.getElementById("chatPage").style.display = "block";
+
+    botReply("Hello " + name + "! How can I help you today?");
+}
+
+// DARK MODE
+function toggleDarkMode(){
+    document.body.classList.toggle("dark-mode");
+}
+
+// VOICE INPUT
+function startVoice(){
+    let rec = new webkitSpeechRecognition();
+    rec.lang = "en-US";
+    rec.onresult = function(e){
+        document.getElementById("userInput").value = e.results[0][0].transcript;
+        sendMessage();
+    }
+    rec.start();
+}
+
+// SEND MESSAGE
+function sendMessage(){
+    let msg = document.getElementById("userInput").value.trim();
+    if(msg === "") return;
+
+    addMessage(msg, "user");
+    document.getElementById("userInput").value = "";
+    botTyping();
+
+    setTimeout(()=>{ botReply(processMessage(msg)); }, 1000);
+}
+
+// CHAT DISPLAY
+function addMessage(text, sender){
+    let box = document.createElement("div");
+    box.className = sender;
+    box.innerText = text;
+    document.getElementById("messages").appendChild(box);
+}
+
+function botTyping(){
+    document.getElementById("typing").innerText = "Bot is typing...";
+}
+
+function botReply(text){
+    document.getElementById("typing").innerText = "";
+    addMessage(text, "bot");
+}
+
+/* -------------------------
+   UPDATED QUESTION SYSTEM
+-------------------------- */
+
+function processMessage(msg){
+    msg = msg.toLowerCase();
+
+    // EXISTING QUESTIONS
+    if(msg.includes("hii") || msg.includes("hello")) 
+        return "What should I help you with today?";
+    if(msg.includes("depression")) 
+        return "Depression includes sadness, loss of interest, tiredness, hopelessness, and sleep changes.";
+    if(msg.includes("anxiety")) 
+        return "Anxiety causes restlessness, fast heartbeat, fear, sweating, and overthinking.";
+    if(msg.includes("sadness")) 
+        return "Sadness is temporary. Depression lasts longer and affects daily life.";
+    if(msg.includes("friend")) 
+        return "Listen to them, be supportive, avoid judging, and encourage professional help if needed.";
+    if(msg.includes("negative")) 
+        return "Try journaling, mindfulness, deep breathing, and grounding techniques.";
+    if(msg.includes("overthinking")) 
+        return "Try: 4-7-8 breathing, grounding (5-4-3-2-1 method), or short mindfulness.";
+    if(msg.includes("hurt") || msg.includes("give up")) 
+        return "I'm really sorry you're feeling this way. Please call AASRA: 91-9820466726 or NIMHANS: 080 4611 0007 immediately.";
+
+    // NEW ADDED QUESTIONS
+    if(msg.includes("warning signs of anxiety") || msg.includes("early signs anxiety"))
+        return "Early warning signs include restlessness, irritability, fast heartbeat, sweating, and difficulty concentrating.";
+
+    if(msg.includes("panic attack"))
+        return "A panic attack feels like sudden intense fear, chest tightness, shaking, dizziness, and a sense of losing control.";
+
+    if(msg.includes("teenagers get depression") || msg.includes("teen depression"))
+        return "Yes, teenagers can experience depression due to stress, hormones, pressure, or emotional struggles.";
+
+    if(msg.includes("myths about mental health"))
+        return "Common myths: mental illness is not weakness, therapy isn't only for extreme cases, and mental issues are real health conditions.";
+
+    if(msg.includes("stress affect the brain"))
+        return "Stress affects memory, decision making, sleep, mood, and increases cortisol levels.";
+
+    if(msg.includes("social anxiety"))
+        return "Social anxiety is the fear of being judged or embarrassed in social situations.";
+
+    if(msg.includes("difference between fear and anxiety"))
+        return "Fear is a reaction to real danger; anxiety is worry about potential or imagined threats.";
+
+    if(msg.includes("lack of sleep") || msg.includes("sleep cause mental health"))
+        return "Yes, lack of sleep increases anxiety, irritability, stress, and affects emotional balance.";
+
+    if(msg.includes("improve my sleep"))
+        return "Try a sleep routine, avoid screens before bed, reduce caffeine, and practice relaxation before sleeping.";
+
+    if(msg.includes("foods reduce stress") || msg.includes("stress foods"))
+        return "Foods like nuts, dark chocolate, bananas, yogurt, herbal teas, and leafy greens help reduce stress.";
+
+    if(msg.includes("exercise help with anxiety"))
+        return "Yes! Exercise releases endorphins, reduces stress hormones, and improves mood.";
+
+    if(msg.includes("stay motivated"))
+        return "Set small goals, avoid comparisons, celebrate progress, and stay consistent.";
+
+    if(msg.includes("build confidence"))
+        return "Use positive affirmations, practice new skills, face fears slowly, and trust your progress.";
+
+    if(msg.includes("peer pressure"))
+        return "Stay firm on your values, choose supportive friends, and say no confidently.";
+
+    if(msg.includes("friend ignores me"))
+        return "Give them space, check calmly if something happened, and avoid assuming the worst.";
+
+    if(msg.includes("stop comparing"))
+        return "Focus on your journey, limit social media, and appreciate your own achievements.";
+
+    if(msg.includes("healthy boundaries"))
+        return "Say no when needed, protect your time, and communicate your limits clearly.";
+
+    if(msg.includes("loneliness"))
+        return "Reach out to someone you trust, engage in hobbies, express feelings, and be kind to yourself.";
+
+    return "I am here for you. Tell me more.";
+}
+</script>
+</body>
+</html>
